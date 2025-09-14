@@ -1,6 +1,6 @@
 # Purple Browser
 
-Purple Browser is a simple and elegant web browser built with Next.js and Firebase. It features a clean, minimalist interface with a unique animated wave background.
+Purple Browser is a simple and elegant web browser built with Next.js. It features a clean, minimalist interface with a unique animated wave background.
 
 ## Features
 
