@@ -9,6 +9,8 @@ import { SettingsDialog, Settings } from '@/components/settings-dialog';
 import { getCookie, setCookie } from '@/lib/cookies';
 import { Button } from '@/components/ui/button';
 import { fonts, fontLinks } from '@/lib/fonts';
+import { useToast } from "@/hooks/use-toast"
+
 
 const DEFAULT_SETTINGS: Settings = {
   lineColor: '#9400D3',
@@ -21,6 +23,7 @@ export default function Home() {
   const [settings, setSettings] = useState<Settings>(DEFAULT_SETTINGS);
   const [year, setYear] = useState(new Date().getFullYear());
   const [isFooterVisible, setIsFooterVisible] = useState(true);
+  const { toast } = useToast();
 
   useEffect(() => {
     const savedSettings: Settings = {
@@ -64,6 +67,10 @@ export default function Home() {
     setCookie('backgroundType', newSettings.backgroundType);
     setCookie('backgroundColor', newSettings.backgroundColor);
     setCookie('font', newSettings.font);
+    toast({
+      title: "Settings Saved",
+      description: "Your preferences have been updated.",
+    });
   };
   
   return (
@@ -111,4 +118,3 @@ export default function Home() {
     </div>
   );
 }
-
