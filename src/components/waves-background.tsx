@@ -66,7 +66,24 @@ type Point = {
   cursor: { x: number; y: number; vx: number; vy: number; };
 };
 
-export const WavesBackground = ({ lineColor = '#9400D3', backgroundColor = 'transparent', waveSpeedX = 0.0125, waveSpeedY = 0.005, waveAmpX = 32, waveAmpY = 16, xGap = 10, yGap = 32, friction = 0.925, tension = 0.005, maxCursorMove = 100, style = {}, className = '' }) => {
+type WavesBackgroundProps = {
+  lineColor?: string;
+  backgroundColor?: string;
+  waveSpeedX?: number;
+  waveSpeedY?: number;
+  waveAmpX?: number;
+  waveAmpY?: number;
+  xGap?: number;
+  yGap?: number;
+  friction?: number;
+  tension?: number;
+  maxCursorMove?: number;
+  style?: React.CSSProperties;
+  className?: string;
+  isVisible: boolean;
+};
+
+export const WavesBackground = ({ isVisible, lineColor = '#9400D3', backgroundColor = 'transparent', waveSpeedX = 0.0125, waveSpeedY = 0.005, waveAmpX = 32, waveAmpY = 16, xGap = 10, yGap = 32, friction = 0.925, tension = 0.005, maxCursorMove = 100, style = {}, className = '' }: WavesBackgroundProps) => {
   const containerRef = useRef<HTMLDivElement>(null);
   const canvasRef = useRef<HTMLCanvasElement>(null);
   const ctxRef = useRef<CanvasRenderingContext2D | null>(null);
@@ -82,6 +99,14 @@ export const WavesBackground = ({ lineColor = '#9400D3', backgroundColor = 'tran
   }, [lineColor, waveSpeedX, waveSpeedY, waveAmpX, waveAmpY, friction, tension, maxCursorMove, xGap, yGap]);
 
   useEffect(() => {
+    if (!isVisible) {
+      if (frameIdRef.current) {
+        cancelAnimationFrame(frameIdRef.current);
+        frameIdRef.current = null;
+      }
+      return;
+    }
+
     const canvas = canvasRef.current;
     const container = containerRef.current;
     if (!canvas || !container) return;
@@ -205,7 +230,9 @@ export const WavesBackground = ({ lineColor = '#9400D3', backgroundColor = 'tran
 
     setSize();
     setLines();
-    frameIdRef.current = requestAnimationFrame(tick);
+    if (!frameIdRef.current) {
+        frameIdRef.current = requestAnimationFrame(tick);
+    }
     window.addEventListener('resize', onResize);
     window.addEventListener('mousemove', onMouseMove);
     window.addEventListener('touchmove', onTouchMove, { passive: true });
@@ -214,9 +241,14 @@ export const WavesBackground = ({ lineColor = '#9400D3', backgroundColor = 'tran
       window.removeEventListener('resize', onResize);
       window.removeEventListener('mousemove', onMouseMove);
       window.removeEventListener('touchmove', onTouchMove);
-      if (frameIdRef.current) cancelAnimationFrame(frameIdRef.current);
+      if (frameIdRef.current) {
+          cancelAnimationFrame(frameIdRef.current);
+          frameIdRef.current = null;
+      }
     };
-  }, []);
+  }, [isVisible]);
+
+  if (!isVisible) return null;
 
   return (
     <div
