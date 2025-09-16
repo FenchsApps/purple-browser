@@ -1,5 +1,3 @@
-'use server';
-
 export type Font = {
   name: string;
   value: string;
