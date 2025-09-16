@@ -1,12 +1,11 @@
 "use client";
 
-import { useState, useEffect } from 'react';
+import { useState } from 'react';
 import { Settings, Check } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Sheet, SheetContent, SheetHeader, SheetTitle, SheetTrigger, SheetFooter, SheetDescription } from '@/components/ui/sheet';
 import { Label } from '@/components/ui/label';
 import { Input } from '@/components/ui/input';
-import { useToast } from '@/hooks/use-toast';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { RadioGroup, RadioGroupItem } from '@/components/ui/radio-group';
 import { Separator } from '@/components/ui/separator';
@@ -34,29 +33,31 @@ type SettingsProps = {
 export function SettingsDialog({ currentSettings, onSave }: SettingsProps) {
   const [isOpen, setIsOpen] = useState(false);
   const [settings, setSettings] = useState(currentSettings);
-  const { toast } = useToast();
-
-  useEffect(() => {
-    if (isOpen) {
-      setSettings(currentSettings);
-    }
-  }, [currentSettings, isOpen]);
 
   const handleSave = () => {
     onSave(settings);
-    toast({
-      title: "Settings Saved",
-      description: "Your preferences have been updated.",
-    });
     setIsOpen(false);
   };
 
   const handleSettingChange = <K extends keyof Settings>(key: K, value: Settings[K]) => {
     setSettings(prev => ({ ...prev, [key]: value }));
   };
+  
+  // Update local state when currentSettings prop changes
+  // This is important if the settings can be changed from outside this component
+  // and we want the dialog to reflect those changes when it's re-opened.
+  useState(() => {
+    setSettings(currentSettings);
+  });
+
 
   return (
-    <Sheet open={isOpen} onOpenChange={setIsOpen}>
+    <Sheet open={isOpen} onOpenChange={(open) => {
+        setIsOpen(open);
+        if (open) {
+            setSettings(currentSettings);
+        }
+    }}>
       <SheetTrigger asChild>
         <Button variant="ghost" size="icon">
           <Settings className="h-5 w-5" />
