@@ -64,7 +64,7 @@ export default function Home() {
 
       {isFooterVisible && (
         <footer className="absolute bottom-0 z-20 w-[calc(100%-2rem)] max-w-4xl mb-4 p-3 border bg-card/50 backdrop-blur-sm rounded-xl shadow-lg flex items-center justify-between text-sm text-foreground/80">
-          <span>© {year} Purple Browser.</span>
+          <span>{year} Purple Browser.</span>
           <Button variant="ghost" size="icon" className="h-6 w-6" onClick={() => setIsFooterVisible(false)}>
             <X className="h-4 w-4" />
             <span className="sr-only">Hide</span>
