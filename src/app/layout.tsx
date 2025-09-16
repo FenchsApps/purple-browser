@@ -1,6 +1,7 @@
 import type {Metadata} from 'next';
 import './globals.css';
 import { Toaster } from "@/components/ui/toaster"
+import { LanguageProvider } from '@/context/language-context';
 
 export const metadata: Metadata = {
   title: 'Purple Navigator',
@@ -14,13 +15,15 @@ export default function RootLayout({
 }>) {
   return (
     <html lang="en" className="dark">
-      <head>
+       <head>
         <link rel="preconnect" href="https://fonts.googleapis.com" />
         <link rel="preconnect" href="https://fonts.gstatic.com" crossOrigin="anonymous" />
         {/* Font link will be updated by the page component */}
       </head>
       <body className="font-body antialiased">
-        {children}
+        <LanguageProvider>
+          {children}
+        </LanguageProvider>
         <Toaster />
       </body>
     </html>
