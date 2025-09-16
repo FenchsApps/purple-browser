@@ -2,22 +2,26 @@
 
 import { useState, useEffect } from 'react';
 import Link from 'next/link';
-import { Github } from 'lucide-react';
+import { Github, X } from 'lucide-react';
 import { WavesBackground } from '@/components/waves-background';
 import { SearchForm } from '@/components/search-form';
 import { SettingsDialog } from '@/components/settings-dialog';
 import { getCookie, setCookie } from '@/lib/cookies';
+import { Button } from '@/components/ui/button';
 
 const DEFAULT_LINE_COLOR = '#9400D3';
 
 export default function Home() {
   const [lineColor, setLineColor] = useState(DEFAULT_LINE_COLOR);
+  const [year, setYear] = useState(new Date().getFullYear());
+  const [isFooterVisible, setIsFooterVisible] = useState(true);
 
   useEffect(() => {
     const savedLineColor = getCookie('lineColor');
     if (savedLineColor) {
       setLineColor(savedLineColor);
     }
+    setYear(new Date().getFullYear());
   }, []);
 
   const handleSaveSettings = (newSettings: { lineColor: string }) => {
@@ -57,6 +61,16 @@ export default function Home() {
           <SearchForm />
         </div>
       </main>
+
+      {isFooterVisible && (
+        <footer className="absolute bottom-0 z-20 w-[calc(100%-2rem)] max-w-4xl mb-4 p-3 border bg-card/50 backdrop-blur-sm rounded-xl shadow-lg flex items-center justify-between text-sm text-foreground/80">
+          <span>© {year} Purple Browser.</span>
+          <Button variant="ghost" size="icon" className="h-6 w-6" onClick={() => setIsFooterVisible(false)}>
+            <X className="h-4 w-4" />
+            <span className="sr-only">Hide</span>
+          </Button>
+        </footer>
+      )}
     </div>
   );
 }
