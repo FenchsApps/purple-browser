@@ -7,31 +7,52 @@ import { Sheet, SheetContent, SheetHeader, SheetTitle, SheetTrigger, SheetFooter
 import { Label } from '@/components/ui/label';
 import { Input } from '@/components/ui/input';
 import { useToast } from '@/hooks/use-toast';
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
+import { RadioGroup, RadioGroupItem } from '@/components/ui/radio-group';
+import { Separator } from '@/components/ui/separator';
+import { fonts } from '@/lib/fonts';
+
+const languages = [
+  { name: 'English (US)', value: 'en-US' },
+  { name: 'Русский', value: 'ru' },
+  { name: 'Deutsch', value: 'de' },
+  { name: 'Français', value: 'fr' },
+];
+
+export type Settings = {
+  lineColor: string;
+  backgroundType: 'dynamic' | 'solid';
+  backgroundColor: string;
+  font: string;
+};
 
 type SettingsProps = {
-  currentSettings: {
-    lineColor: string;
-  };
-  onSave: (newSettings: { lineColor: string }) => void;
+  currentSettings: Settings;
+  onSave: (newSettings: Settings) => void;
 };
 
 export function SettingsDialog({ currentSettings, onSave }: SettingsProps) {
   const [isOpen, setIsOpen] = useState(false);
-  const [lineColor, setLineColor] = useState(currentSettings.lineColor);
+  const [settings, setSettings] = useState(currentSettings);
   const { toast } = useToast();
 
   useEffect(() => {
-    setLineColor(currentSettings.lineColor);
-  }, [currentSettings.lineColor, isOpen]);
+    if (isOpen) {
+      setSettings(currentSettings);
+    }
+  }, [currentSettings, isOpen]);
 
   const handleSave = () => {
-    onSave({ lineColor });
+    onSave(settings);
     toast({
       title: "Settings Saved",
       description: "Your preferences have been updated.",
-      action: <Check className="h-4 w-4 text-green-500" />,
     });
     setIsOpen(false);
+  };
+
+  const handleSettingChange = <K extends keyof Settings>(key: K, value: Settings[K]) => {
+    setSettings(prev => ({ ...prev, [key]: value }));
   };
 
   return (
@@ -42,7 +63,7 @@ export function SettingsDialog({ currentSettings, onSave }: SettingsProps) {
           <span className="sr-only">Open Settings</span>
         </Button>
       </SheetTrigger>
-      <SheetContent>
+      <SheetContent className="w-[320px] sm:w-[400px]">
         <SheetHeader>
           <SheetTitle>Settings</SheetTitle>
           <SheetDescription>
@@ -50,22 +71,91 @@ export function SettingsDialog({ currentSettings, onSave }: SettingsProps) {
           </SheetDescription>
         </SheetHeader>
         <div className="grid gap-6 py-6">
-          <div className="grid grid-cols-3 items-center gap-4">
-            <Label htmlFor="lineColor">
-              Wave Color
-            </Label>
-            <Input
-              id="lineColor"
-              type="color"
-              value={lineColor}
-              onChange={(e) => setLineColor(e.target.value)}
-              className="col-span-2 p-1 h-10"
-            />
-          </div>
-          <div className="grid grid-cols-3 items-center gap-4">
+          <div className="space-y-4">
             <Label>Language</Label>
-            <Button variant="outline" disabled className="col-span-2">English (US)</Button>
+            <Select defaultValue="en-US" disabled>
+              <SelectTrigger>
+                <SelectValue placeholder="Select a language" />
+              </SelectTrigger>
+              <SelectContent>
+                {languages.map(lang => (
+                  <SelectItem key={lang.value} value={lang.value}>
+                    {lang.name}
+                  </SelectItem>
+                ))}
+              </SelectContent>
+            </Select>
+            <p className="text-xs text-muted-foreground">
+              Language switching is not yet implemented.
+            </p>
           </div>
+          
+          <Separator />
+
+          <div className="space-y-4">
+            <Label>Background Type</Label>
+            <RadioGroup
+              value={settings.backgroundType}
+              onValueChange={(value: 'dynamic' | 'solid') => handleSettingChange('backgroundType', value)}
+            >
+              <div className="flex items-center space-x-2">
+                <RadioGroupItem value="dynamic" id="bg-dynamic" />
+                <Label htmlFor="bg-dynamic">Dynamic</Label>
+              </div>
+              <div className="flex items-center space-x-2">
+                <RadioGroupItem value="solid" id="bg-solid" />
+                <Label htmlFor="bg-solid">Solid Color</Label>
+              </div>
+            </RadioGroup>
+          </div>
+          
+          {settings.backgroundType === 'dynamic' && (
+            <div className="grid grid-cols-3 items-center gap-4">
+              <Label htmlFor="lineColor">Wave Color</Label>
+              <Input
+                id="lineColor"
+                type="color"
+                value={settings.lineColor}
+                onChange={(e) => handleSettingChange('lineColor', e.target.value)}
+                className="col-span-2 p-1 h-10"
+              />
+            </div>
+          )}
+
+          {settings.backgroundType === 'solid' && (
+            <div className="grid grid-cols-3 items-center gap-4">
+              <Label htmlFor="backgroundColor">Background Color</Label>
+              <Input
+                id="backgroundColor"
+                type="color"
+                value={settings.backgroundColor}
+                onChange={(e) => handleSettingChange('backgroundColor', e.target.value)}
+                className="col-span-2 p-1 h-10"
+              />
+            </div>
+          )}
+          
+          <Separator />
+          
+          <div className="space-y-4">
+            <Label>Font</Label>
+            <Select
+              value={settings.font}
+              onValueChange={(value) => handleSettingChange('font', value)}
+            >
+              <SelectTrigger>
+                <SelectValue placeholder="Select a font" />
+              </SelectTrigger>
+              <SelectContent>
+                {fonts.map(font => (
+                  <SelectItem key={font.value} value={font.value}>
+                    {font.name}
+                  </SelectItem>
+                ))}
+              </SelectContent>
+            </Select>
+          </div>
+
         </div>
         <SheetFooter>
           <Button onClick={handleSave} className="w-full">
