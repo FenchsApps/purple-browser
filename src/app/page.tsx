@@ -37,6 +37,8 @@ export default function Home() {
   }, []);
 
   useEffect(() => {
+    if (typeof window === 'undefined') return;
+
     const font = fonts.find(f => f.value === settings.font) || fonts[0];
     document.body.style.fontFamily = font.family;
     document.body.style.setProperty('--font-family-headline', font.family);
