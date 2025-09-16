@@ -10,7 +10,7 @@ import { getCookie, setCookie } from '@/lib/cookies';
 import { Button } from '@/components/ui/button';
 import { fonts, fontLinks } from '@/lib/fonts';
 import { useToast } from "@/hooks/use-toast"
-
+import { useLanguage } from '@/hooks/use-language';
 
 const DEFAULT_SETTINGS: Settings = {
   lineColor: '#9400D3',
@@ -24,6 +24,7 @@ export default function Home() {
   const [year, setYear] = useState(new Date().getFullYear());
   const [isFooterVisible, setIsFooterVisible] = useState(true);
   const { toast } = useToast();
+  const { t } = useLanguage();
 
   useEffect(() => {
     const savedSettings: Settings = {
@@ -70,8 +71,8 @@ export default function Home() {
     setCookie('backgroundColor', newSettings.backgroundColor);
     setCookie('font', newSettings.font);
     toast({
-      title: "Settings Saved",
-      description: "Your preferences have been updated.",
+      title: t('settingsSavedTitle'),
+      description: t('settingsSavedDesc'),
     });
   };
   
@@ -89,10 +90,10 @@ export default function Home() {
             <span className="hidden md:inline">FenchsApps</span>
           </Link>
           <span className="text-foreground/60">|</span>
-          <Link href="https://www.gnu.org/licenses/gpl-3.0.html" target="_blank" rel="noopener noreferrer" className="hover:text-primary transition-colors">License</Link>
+          <Link href="https://www.gnu.org/licenses/gpl-3.0.html" target="_blank" rel="noopener noreferrer" className="hover:text-primary transition-colors">{t('license')}</Link>
         </div>
         <div className="absolute left-1/2 top-1/2 -translate-x-1/2 -translate-y-1/2 text-xl font-semibold font-headline hidden md:block" style={{ fontFamily: 'var(--font-family-headline)' }}>
-          Purple Browser
+          {t('browserName')}
         </div>
         <div>
           <SettingsDialog 
@@ -103,10 +104,10 @@ export default function Home() {
       </header>
       
       <main className="z-10 flex flex-1 flex-col items-center justify-center space-y-4 px-4 text-center">
-        <h1 className="text-4xl font-bold text-primary sm:text-5xl md:hidden" style={{ fontFamily: 'var(--font-family-headline)' }}>Purple Browser</h1>
+        <h1 className="text-4xl font-bold text-primary sm:text-5xl md:hidden" style={{ fontFamily: 'var(--font-family-headline)' }}>{t('browserName')}</h1>
         <div className="w-full max-w-2xl">
           <p className="mb-4 text-lg text-foreground/90">
-            What are you looking for today?
+            {t('searchPrompt')}
           </p>
           <SearchForm />
         </div>
@@ -114,10 +115,10 @@ export default function Home() {
 
       {isFooterVisible && (
         <footer className="absolute bottom-0 z-20 w-[calc(100%-2rem)] max-w-4xl mb-4 p-3 border bg-card/50 backdrop-blur-sm rounded-xl shadow-lg flex items-center justify-between text-sm text-foreground/80">
-          <span>© {year} Purple Browser.</span>
+          <span>© {year} {t('browserName')}.</span>
           <Button variant="ghost" size="icon" className="h-6 w-6" onClick={() => setIsFooterVisible(false)}>
             <X className="h-4 w-4" />
-            <span className="sr-only">Hide</span>
+            <span className="sr-only">{t('hide')}</span>
           </Button>
         </footer>
       )}
