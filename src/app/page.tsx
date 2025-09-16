@@ -1,166 +1,126 @@
 "use client";
 
 import { useState, useEffect } from 'react';
-import { Settings, Check } from 'lucide-react';
+import Link from 'next/link'
+import { Github, X } from 'lucide-react';
+import { WavesBackground } from '@/components/waves-background';
+import { SearchForm } from '@/components/search-form';
+import { SettingsDialog, Settings } from '@/components/settings-dialog';
+import { getCookie, setCookie } from '@/lib/cookies';
 import { Button } from '@/components/ui/button';
-import { Sheet, SheetContent, SheetHeader, SheetTitle, SheetTrigger, SheetFooter, SheetDescription } from '@/components/ui/sheet';
-import { Label } from '@/components/ui/label';
-import { Input } from '@/components/ui/input';
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
-import { RadioGroup, RadioGroupItem } from '@/components/ui/radio-group';
-import { Separator } from '@/components/ui/separator';
-import { fonts } from '@/lib/fonts';
+import { fonts, fontLinks } from '@/lib/fonts';
+import { useToast } from "@/hooks/use-toast"
 
-const languages = [
-  { name: 'English (US)', value: 'en-US' },
-  { name: 'Русский', value: 'ru' },
-  { name: 'Deutsch', value: 'de' },
-  { name: 'Français', value: 'fr' },
-];
 
-export type Settings = {
-  lineColor: string;
-  backgroundType: 'dynamic' | 'solid';
-  backgroundColor: string;
-  font: string;
+const DEFAULT_SETTINGS: Settings = {
+  lineColor: '#9400D3',
+  backgroundType: 'dynamic',
+  backgroundColor: '#000000',
+  font: 'inter',
 };
 
-type SettingsProps = {
-  currentSettings: Settings;
-  onSave: (newSettings: Settings) => void;
-};
+export default function Home() {
+  const [settings, setSettings] = useState<Settings | null>(null);
+  const [year, setYear] = useState(new Date().getFullYear());
+  const [isFooterVisible, setIsFooterVisible] = useState(true);
+  const { toast } = useToast();
 
-export function SettingsDialog({ currentSettings, onSave }: SettingsProps) {
-  const [isOpen, setIsOpen] = useState(false);
-  const [settings, setSettings] = useState(currentSettings);
+  useEffect(() => {
+    const savedSettings: Settings = {
+      lineColor: getCookie('lineColor') || DEFAULT_SETTINGS.lineColor,
+      backgroundType: (getCookie('backgroundType') as 'dynamic' | 'solid') || DEFAULT_SETTINGS.backgroundType,
+      backgroundColor: getCookie('backgroundColor') || DEFAULT_SETTINGS.backgroundColor,
+      font: getCookie('font') || DEFAULT_SETTINGS.font,
+    };
+    setSettings(savedSettings);
+    setYear(new Date().getFullYear());
+  }, []);
 
-  const handleSave = () => {
-    onSave(settings);
-    setIsOpen(false);
-  };
+  useEffect(() => {
+    if (typeof window === 'undefined' || !settings) return;
 
-  const handleSettingChange = <K extends keyof Settings>(key: K, value: Settings[K]) => {
-    setSettings(prev => ({ ...prev, [key]: value }));
+    const font = fonts.find(f => f.value === settings.font) || fonts[0];
+    document.body.style.fontFamily = font.family;
+    document.body.style.setProperty('--font-family-headline', font.family);
+
+    const fontLink = fontLinks[settings.font as keyof typeof fontLinks];
+    let linkElement = document.querySelector<HTMLLinkElement>('link[data-font-link]');
+    if (!linkElement) {
+        linkElement = document.createElement('link');
+        linkElement.rel = 'stylesheet';
+        linkElement.setAttribute('data-font-link', 'true');
+        document.head.appendChild(linkElement);
+    }
+    if (linkElement.href !== fontLink) {
+        linkElement.href = fontLink;
+    }
+
+    if (settings.backgroundType === 'solid') {
+      document.body.style.backgroundColor = settings.backgroundColor;
+    } else {
+      document.body.style.backgroundColor = ''; // Revert to CSS variable
+    }
+
+  }, [settings]);
+
+  const handleSaveSettings = (newSettings: Settings) => {
+    setSettings(newSettings);
+    setCookie('lineColor', newSettings.lineColor);
+    setCookie('backgroundType', newSettings.backgroundType);
+    setCookie('backgroundColor', newSettings.backgroundColor);
+    setCookie('font', newSettings.font);
+    toast({
+      title: "Settings Saved",
+      description: "Your preferences have been updated.",
+    });
   };
   
-  useEffect(() => {
-    setSettings(currentSettings);
-  }, [currentSettings]);
-
+  if (!settings) {
+    return null; // or a loading spinner
+  }
 
   return (
-    <Sheet open={isOpen} onOpenChange={(open) => {
-        setIsOpen(open);
-        if (open) {
-            setSettings(currentSettings);
-        }
-    }}>
-      <SheetTrigger asChild>
-        <Button variant="ghost" size="icon">
-          <Settings className="h-5 w-5" />
-          <span className="sr-only">Open Settings</span>
-        </Button>
-      </SheetTrigger>
-      <SheetContent className="w-[320px] sm:w-[400px]">
-        <SheetHeader>
-          <SheetTitle>Settings</SheetTitle>
-          <SheetDescription>
-            Customize your browser experience. Changes are saved to cookies.
-          </SheetDescription>
-        </SheetHeader>
-        <div className="grid gap-6 py-6">
-          <div className="space-y-4">
-            <Label>Language</Label>
-            <Select defaultValue="en-US" disabled>
-              <SelectTrigger>
-                <SelectValue placeholder="Select a language" />
-              </SelectTrigger>
-              <SelectContent>
-                {languages.map(lang => (
-                  <SelectItem key={lang.value} value={lang.value}>
-                    {lang.name}
-                  </SelectItem>
-                ))}
-              </SelectContent>
-            </Select>
-            <p className="text-xs text-muted-foreground">
-              Language switching is not yet implemented.
-            </p>
-          </div>
-          
-          <Separator />
-
-          <div className="space-y-4">
-            <Label>Background Type</Label>
-            <RadioGroup
-              value={settings.backgroundType}
-              onValueChange={(value: 'dynamic' | 'solid') => handleSettingChange('backgroundType', value)}
-            >
-              <div className="flex items-center space-x-2">
-                <RadioGroupItem value="dynamic" id="bg-dynamic" />
-                <Label htmlFor="bg-dynamic">Dynamic</Label>
-              </div>
-              <div className="flex items-center space-x-2">
-                <RadioGroupItem value="solid" id="bg-solid" />
-                <Label htmlFor="bg-solid">Solid Color</Label>
-              </div>
-            </RadioGroup>
-          </div>
-          
-          {settings.backgroundType === 'dynamic' && (
-            <div className="grid grid-cols-3 items-center gap-4">
-              <Label htmlFor="lineColor">Wave Color</Label>
-              <Input
-                id="lineColor"
-                type="color"
-                value={settings.lineColor}
-                onChange={(e) => handleSettingChange('lineColor', e.target.value)}
-                className="col-span-2 p-1 h-10"
-              />
-            </div>
-          )}
-
-          {settings.backgroundType === 'solid' && (
-            <div className="grid grid-cols-3 items-center gap-4">
-              <Label htmlFor="backgroundColor">Background Color</Label>
-              <Input
-                id="backgroundColor"
-                type="color"
-                value={settings.backgroundColor}
-                onChange={(e) => handleSettingChange('backgroundColor', e.target.value)}
-                className="col-span-2 p-1 h-10"
-              />
-            </div>
-          )}
-          
-          <Separator />
-          
-          <div className="space-y-4">
-            <Label>Font</Label>
-            <Select
-              value={settings.font}
-              onValueChange={(value) => handleSettingChange('font', value)}
-            >
-              <SelectTrigger>
-                <SelectValue placeholder="Select a font" />
-              </SelectTrigger>
-              <SelectContent>
-                {fonts.map(font => (
-                  <SelectItem key={font.value} value={font.value}>
-                    {font.name}
-                  </SelectItem>
-                ))}
-              </SelectContent>
-            </Select>
-          </div>
-
+    <div className="relative flex min-h-screen w-full flex-col items-center bg-background text-foreground">
+      {settings.backgroundType === 'dynamic' && <WavesBackground lineColor={settings.lineColor} isVisible={true} />}
+      <header className="absolute top-0 z-20 flex w-full items-center justify-between p-4 md:p-6">
+        <div className="flex items-center gap-4 text-sm font-medium">
+          <Link href="https://fenchsapps.github.io" target="_blank" rel="noopener noreferrer" className="flex items-center gap-2 hover:text-primary transition-colors">
+            <Github className="h-5 w-5" />
+            <span className="hidden md:inline">FenchsApps</span>
+          </Link>
+          <span className="text-foreground/60">|</span>
+          <Link href="https://www.gnu.org/licenses/gpl-3.0.html" target="_blank" rel="noopener noreferrer" className="hover:text-primary transition-colors">License</Link>
         </div>
-        <SheetFooter>
-          <Button onClick={handleSave} className="w-full">
-            <Check className="mr-2 h-4 w-4" /> Save Changes
+        <div className="absolute left-1/2 top-1/2 -translate-x-1/2 -translate-y-1/2 text-xl font-semibold font-headline hidden md:block" style={{ fontFamily: 'var(--font-family-headline)' }}>
+          Purple Browser
+        </div>
+        <div>
+          <SettingsDialog 
+            currentSettings={settings}
+            onSave={handleSaveSettings}
+          />
+        </div>
+      </header>
+      
+      <main className="z-10 flex flex-1 flex-col items-center justify-center space-y-4 px-4 text-center">
+        <h1 className="text-4xl font-bold text-primary sm:text-5xl md:hidden" style={{ fontFamily: 'var(--font-family-headline)' }}>Purple Browser</h1>
+        <div className="w-full max-w-2xl">
+          <p className="mb-4 text-lg text-foreground/90">
+            What are you looking for today?
+          </p>
+          <SearchForm />
+        </div>
+      </main>
+
+      {isFooterVisible && (
+        <footer className="absolute bottom-0 z-20 w-[calc(100%-2rem)] max-w-4xl mb-4 p-3 border bg-card/50 backdrop-blur-sm rounded-xl shadow-lg flex items-center justify-between text-sm text-foreground/80">
+          <span>© {year} Purple Browser.</span>
+          <Button variant="ghost" size="icon" className="h-6 w-6" onClick={() => setIsFooterVisible(false)}>
+            <X className="h-4 w-4" />
+            <span className="sr-only">Hide</span>
           </Button>
-        </SheetFooter>
-      </SheetContent>
-    </Sheet>
+        </footer>
+      )}
+    </div>
   );
 }
