@@ -1,7 +1,7 @@
 "use client";
 
 import { useState, useEffect } from 'react';
-import { Settings, Check } from 'lucide-react';
+import { Settings, Check, Beaker } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Sheet, SheetContent, SheetHeader, SheetTitle, SheetTrigger, SheetFooter, SheetDescription } from '@/components/ui/sheet';
 import { Label } from '@/components/ui/label';
@@ -12,12 +12,14 @@ import { Separator } from '@/components/ui/separator';
 import { fonts } from '@/lib/fonts';
 import { useLanguage, languages } from '@/hooks/use-language';
 import { setCookie } from '@/lib/cookies';
+import { Switch } from '@/components/ui/switch';
 
 export type Settings = {
   lineColor: string;
   backgroundType: 'dynamic' | 'solid';
   backgroundColor: string;
   font: string;
+  cursorReaction: boolean;
 };
 
 type SettingsProps = {
@@ -151,6 +153,24 @@ export function SettingsDialog({ currentSettings, onSave }: SettingsProps) {
               </SelectContent>
             </Select>
           </div>
+
+          <Separator />
+
+          <div className="space-y-4">
+             <div className="flex items-center gap-2">
+                <Beaker className="h-5 w-5 text-muted-foreground" />
+                <Label className="text-muted-foreground">Beta Settings</Label>
+            </div>
+            <div className="flex items-center justify-between rounded-lg border p-3">
+                <Label htmlFor="cursor-reaction">Cursor Reaction</Label>
+                <Switch
+                    id="cursor-reaction"
+                    checked={settings.cursorReaction}
+                    onCheckedChange={(checked) => handleSettingChange('cursorReaction', checked)}
+                />
+            </div>
+          </div>
+
 
         </div>
         <SheetFooter>
