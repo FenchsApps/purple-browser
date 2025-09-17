@@ -98,7 +98,7 @@ export default function Home() {
   }
 
   return (
-    <div className="relative flex min-h-screen w-full flex-col items-center bg-background text-foreground">
+    <div className="relative flex min-h-screen w-full flex-col items-center text-foreground">
       {settings.backgroundType === 'dynamic' && <WavesBackground lineColor={settings.lineColor} isVisible={true} cursorReaction={settings.cursorReaction} />}
       <header className="absolute top-0 z-20 flex w-full items-center justify-between p-4 md:p-6">
         <div className="flex items-center gap-4 text-sm font-medium">
