@@ -81,9 +81,10 @@ type WavesBackgroundProps = {
   style?: React.CSSProperties;
   className?: string;
   isVisible: boolean;
+  cursorReaction: boolean;
 };
 
-export const WavesBackground = ({ isVisible, lineColor = '#9400D3', backgroundColor = 'transparent', waveSpeedX = 0.0125, waveSpeedY = 0.005, waveAmpX = 32, waveAmpY = 16, xGap = 10, yGap = 32, friction = 0.925, tension = 0.005, maxCursorMove = 100, style = {}, className = '' }: WavesBackgroundProps) => {
+export const WavesBackground = ({ isVisible, lineColor = '#9400D3', backgroundColor = 'transparent', waveSpeedX = 0.0125, waveSpeedY = 0.005, waveAmpX = 32, waveAmpY = 16, xGap = 10, yGap = 32, friction = 0.925, tension = 0.005, maxCursorMove = 100, style = {}, className = '', cursorReaction = true }: WavesBackgroundProps) => {
   const containerRef = useRef<HTMLDivElement>(null);
   const canvasRef = useRef<HTMLCanvasElement>(null);
   const ctxRef = useRef<CanvasRenderingContext2D | null>(null);
@@ -91,12 +92,12 @@ export const WavesBackground = ({ isVisible, lineColor = '#9400D3', backgroundCo
   const noiseRef = useRef(new Noise(Math.random()));
   const linesRef = useRef<Point[][]>([]);
   const mouseRef = useRef({ x: -10, y: 0, lx: 0, ly: 0, sx: 0, sy: 0, v: 0, vs: 0, a: 0, set: false });
-  const configRef = useRef({ lineColor, waveSpeedX, waveSpeedY, waveAmpX, waveAmpY, friction, tension, maxCursorMove, xGap, yGap });
+  const configRef = useRef({ lineColor, waveSpeedX, waveSpeedY, waveAmpX, waveAmpY, friction, tension, maxCursorMove, xGap, yGap, cursorReaction });
   const frameIdRef = useRef<number | null>(null);
 
   useEffect(() => {
-    configRef.current = { lineColor, waveSpeedX, waveSpeedY, waveAmpX, waveAmpY, friction, tension, maxCursorMove, xGap, yGap };
-  }, [lineColor, waveSpeedX, waveSpeedY, waveAmpX, waveAmpY, friction, tension, maxCursorMove, xGap, yGap]);
+    configRef.current = { lineColor, waveSpeedX, waveSpeedY, waveAmpX, waveAmpY, friction, tension, maxCursorMove, xGap, yGap, cursorReaction };
+  }, [lineColor, waveSpeedX, waveSpeedY, waveAmpX, waveAmpY, friction, tension, maxCursorMove, xGap, yGap, cursorReaction]);
 
   useEffect(() => {
     if (!isVisible) {
@@ -139,19 +140,21 @@ export const WavesBackground = ({ isVisible, lineColor = '#9400D3', backgroundCo
 
     function movePoints(time: number) {
       const lines = linesRef.current, mouse = mouseRef.current, noise = noiseRef.current;
-      const { waveSpeedX, waveSpeedY, waveAmpX, waveAmpY, friction, tension, maxCursorMove } = configRef.current;
+      const { waveSpeedX, waveSpeedY, waveAmpX, waveAmpY, friction, tension, maxCursorMove, cursorReaction } = configRef.current;
       lines.forEach(pts => {
         pts.forEach(p => {
           const move = noise.perlin2((p.x + time * waveSpeedX) * 0.002, (p.y + time * waveSpeedY) * 0.0015) * 12;
           p.wave.x = Math.cos(move) * waveAmpX;
           p.wave.y = Math.sin(move) * waveAmpY;
-          const dx = p.x - mouse.sx, dy = p.y - mouse.sy;
-          const dist = Math.hypot(dx, dy), l = Math.max(175, mouse.vs);
-          if (dist < l) {
-            const s = 1 - dist / l;
-            const f = Math.cos(dist * 0.001) * s;
-            p.cursor.vx += Math.cos(mouse.a) * f * l * mouse.vs * 0.00065;
-            p.cursor.vy += Math.sin(mouse.a) * f * l * mouse.vs * 0.00065;
+          if (cursorReaction) {
+            const dx = p.x - mouse.sx, dy = p.y - mouse.sy;
+            const dist = Math.hypot(dx, dy), l = Math.max(175, mouse.vs);
+            if (dist < l) {
+              const s = 1 - dist / l;
+              const f = Math.cos(dist * 0.001) * s;
+              p.cursor.vx += Math.cos(mouse.a) * f * l * mouse.vs * 0.00065;
+              p.cursor.vy += Math.sin(mouse.a) * f * l * mouse.vs * 0.00065;
+            }
           }
           p.cursor.vx += (0 - p.cursor.x) * tension;
           p.cursor.vy += (0 - p.cursor.y) * tension;
@@ -166,8 +169,9 @@ export const WavesBackground = ({ isVisible, lineColor = '#9400D3', backgroundCo
     }
 
     function moved(point: Point, withCursor = true) {
-      const x = point.x + point.wave.x + (withCursor ? point.cursor.x : 0);
-      const y = point.y + point.wave.y + (withCursor ? point.cursor.y : 0);
+      const { cursorReaction } = configRef.current;
+      const x = point.x + point.wave.x + (withCursor && cursorReaction ? point.cursor.x : 0);
+      const y = point.y + point.wave.y + (withCursor && cursorReaction ? point.cursor.y : 0);
       return { x: Math.round(x * 10) / 10, y: Math.round(y * 10) / 10 };
     }
 
@@ -194,28 +198,38 @@ export const WavesBackground = ({ isVisible, lineColor = '#9400D3', backgroundCo
 
     function tick(t: number) {
       const mouse = mouseRef.current;
-      mouse.sx += (mouse.x - mouse.sx) * 0.1;
-      mouse.sy += (mouse.y - mouse.sy) * 0.1;
-      const dx = mouse.x - mouse.lx, dy = mouse.y - mouse.ly;
-      const d = Math.hypot(dx, dy);
-      mouse.v = d;
-      mouse.vs += (d - mouse.vs) * 0.1;
-      mouse.vs = Math.min(100, mouse.vs);
-      mouse.lx = mouse.x;
-      mouse.ly = mouse.y;
-      mouse.a = Math.atan2(dy, dx);
-      if (container) {
-        container.style.setProperty('--x', `${mouse.sx}px`);
-        container.style.setProperty('--y', `${mouse.sy}px`);
+      const { cursorReaction } = configRef.current;
+
+      if(cursorReaction) {
+        mouse.sx += (mouse.x - mouse.sx) * 0.1;
+        mouse.sy += (mouse.y - mouse.sy) * 0.1;
+        const dx = mouse.x - mouse.lx, dy = mouse.y - mouse.ly;
+        const d = Math.hypot(dx, dy);
+        mouse.v = d;
+        mouse.vs += (d - mouse.vs) * 0.1;
+        mouse.vs = Math.min(100, mouse.vs);
+        mouse.lx = mouse.x;
+        mouse.ly = mouse.y;
+        mouse.a = Math.atan2(dy, dx);
+        if (container) {
+            container.style.setProperty('--x', `${mouse.sx}px`);
+            container.style.setProperty('--y', `${mouse.sy}px`);
+        }
+      } else {
+        if (container) {
+            container.style.setProperty('--x', `-100px`);
+            container.style.setProperty('--y', `-100px`);
+        }
       }
+
       movePoints(t);
       drawLines();
       frameIdRef.current = requestAnimationFrame(tick);
     }
 
     function onResize() { setSize(); setLines(); }
-    function onMouseMove(e: MouseEvent) { updateMouse(e.clientX, e.clientY); }
-    function onTouchMove(e: TouchEvent) { const touch = e.touches[0]; updateMouse(touch.clientX, touch.clientY); }
+    function onMouseMove(e: MouseEvent) { if (configRef.current.cursorReaction) updateMouse(e.clientX, e.clientY); }
+    function onTouchMove(e: TouchEvent) { if (configRef.current.cursorReaction) { const touch = e.touches[0]; updateMouse(touch.clientX, touch.clientY); } }
     
     function updateMouse(x: number, y: number) {
       const mouse = mouseRef.current, b = boundingRef.current;
