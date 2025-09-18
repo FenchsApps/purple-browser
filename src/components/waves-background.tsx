@@ -268,7 +268,7 @@ export const WavesBackground = ({ isVisible, lineColor = '#9400D3', backgroundCo
     <div
       ref={containerRef}
       className={`waves ${className}`}
-      style={{ position: 'absolute', inset: 0, margin: 0, padding: 0, width: '100%', height: '100%', overflow: 'hidden', zIndex: 0, backgroundColor, ...style }}
+      style={{ position: 'absolute', inset: 0, margin: 0, padding: 0, width: '100%', height: '100%', overflow: 'hidden', zIndex: 0, backgroundColor, pointerEvents: 'none', ...style }}
     >
       <canvas ref={canvasRef} className="waves-canvas" />
     </div>

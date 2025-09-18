@@ -13,6 +13,10 @@ import { useToast } from "@/hooks/use-toast"
 import { useLanguage } from '@/hooks/use-language';
 import { getColorName } from '@/lib/color-names';
 
+type UserShortcut = {
+  url: string;
+};
+
 const DEFAULT_SETTINGS: Settings = {
   lineColor: '#9400D3',
   backgroundType: 'dynamic',
@@ -26,6 +30,9 @@ export default function Home() {
   const [year, setYear] = useState(new Date().getFullYear());
   const [isFooterVisible, setIsFooterVisible] = useState(true);
   const [browserName, setBrowserName] = useState('Purple Browser');
+  const [shortcuts, setShortcuts] = useState<UserShortcut[]>([]);
+  const [isAddingShortcut, setIsAddingShortcut] = useState(false);
+  const [shortcutInput, setShortcutInput] = useState('');
   const { toast } = useToast();
   const { t } = useLanguage();
 
@@ -39,6 +46,20 @@ export default function Home() {
     };
     setSettings(savedSettings);
     setYear(new Date().getFullYear());
+
+    // Load shortcuts from cookie
+    const rawShortcuts = getCookie('shortcuts');
+    if (rawShortcuts) {
+      try {
+        const parsed = JSON.parse(decodeURIComponent(rawShortcuts));
+        if (Array.isArray(parsed)) {
+          const valid = parsed.filter((s: any) => s && typeof s.url === 'string');
+          setShortcuts(valid);
+        }
+      } catch {
+        // ignore invalid cookie
+      }
+    }
   }, []);
 
   useEffect(() => {
@@ -46,7 +67,8 @@ export default function Home() {
 
     const font = fonts.find(f => f.value === settings.font) || fonts[0];
     document.body.style.fontFamily = font.family;
-    document.body.style.setProperty('--font-family-headline', 'Konfuciuz'); // Always use Konfuciuz for headline
+    // Use the same body font for headlines (remove special headline font)
+    document.body.style.setProperty('--font-family-headline', font.family);
 
     const fontLink = fontLinks[settings.font as keyof typeof fontLinks];
     let linkElement = document.querySelector<HTMLLinkElement>('link[data-font-link]');
@@ -59,22 +81,14 @@ export default function Home() {
     if (linkElement.href !== fontLink) {
         linkElement.href = fontLink;
     }
-    
-    // Add Konfuciuz font link
-    let konfuciuzLink = document.querySelector<HTMLLinkElement>('link[href="https://fonts.cdnfonts.com/css/konfuciuz"]');
-    if (!konfuciuzLink) {
-        konfuciuzLink = document.createElement('link');
-        konfuciuzLink.rel = 'stylesheet';
-        konfuciuzLink.href = 'https://fonts.cdnfonts.com/css/konfuciuz';
-        document.head.appendChild(konfuciuzLink);
-    }
 
 
     if (settings.backgroundType === 'solid') {
       document.body.style.backgroundColor = settings.backgroundColor;
       setBrowserName(`${getColorName(settings.backgroundColor)} Browser`);
     } else {
-      document.body.style.backgroundColor = ''; // Revert to CSS variable
+      // Dynamic mode: use CSS background
+      document.body.style.backgroundColor = '';
       setBrowserName(`${getColorName(settings.lineColor)} Browser`);
     }
 
@@ -91,6 +105,61 @@ export default function Home() {
       title: t('settingsSavedTitle'),
       description: t('settingsSavedDesc'),
     });
+  };
+
+  const normalizeUrl = (input: string): string | null => {
+    try {
+      const trimmed = input.trim();
+      if (!trimmed) return null;
+      const withProtocol = /^https?:\/\//i.test(trimmed) ? trimmed : `https://${trimmed}`;
+      const url = new URL(withProtocol);
+      if (url.protocol !== 'http:' && url.protocol !== 'https:') return null;
+      return url.toString();
+    } catch {
+      return null;
+    }
+  };
+
+  const saveShortcutsCookie = (items: UserShortcut[]) => {
+    try {
+      const json = JSON.stringify(items.slice(0, 20));
+      setCookie('shortcuts', json);
+    } catch {
+      // ignore
+    }
+  };
+
+  const handleAddShortcut = () => {
+    const normalized = normalizeUrl(shortcutInput);
+    if (!normalized) {
+      toast({ title: t('invalidUrlTitle'), description: t('invalidUrlDesc') });
+      return;
+    }
+    const next = [...shortcuts.filter(s => s.url !== normalized), { url: normalized }];
+    setShortcuts(next);
+    saveShortcutsCookie(next);
+    setShortcutInput('');
+    setIsAddingShortcut(false);
+    toast({ title: t('shortcutAddedTitle'), description: t('shortcutAddedDesc') });
+  };
+
+  const handleRemoveShortcut = (url: string) => {
+    const next = shortcuts.filter(s => s.url !== url);
+    setShortcuts(next);
+    saveShortcutsCookie(next);
+  };
+
+  const getFaviconCandidates = (targetUrl: string): string[] => {
+    try {
+      const u = new URL(targetUrl);
+      const origin = u.origin;
+      const host = u.hostname;
+      const primary = `${origin}/favicon.ico`;
+      const fallbackGoogle = `https://www.google.com/s2/favicons?sz=64&domain=${encodeURIComponent(host)}`;
+      return [primary, fallbackGoogle];
+    } catch {
+      return [];
+    }
   };
   
   if (!settings) {
@@ -109,7 +178,7 @@ export default function Home() {
           <span className="text-foreground/60">|</span>
           <Link href="https://www.gnu.org/licenses/gpl-3.0.html" target="_blank" rel="noopener noreferrer" className="hover:text-primary transition-colors">{t('license')}</Link>
         </div>
-        <div className="absolute left-1/2 top-1/2 -translate-x-1/2 -translate-y-1/2 text-xl font-semibold font-headline hidden md:block" style={{ fontFamily: 'var(--font-family-headline)' }}>
+        <div className="absolute left-1/2 top-1/2 -translate-x-1/2 -translate-y-1/2 hidden md:block font-headline font-semibold text-2xl md:text-3xl lg:text-4xl" style={{ fontFamily: 'var(--font-family-headline)' }}>
           {browserName}
         </div>
         <div>
@@ -121,12 +190,76 @@ export default function Home() {
       </header>
       
       <main className="z-10 flex flex-1 flex-col items-center justify-center space-y-4 px-4 text-center">
-        <h1 className="text-4xl font-bold text-primary sm:text-5xl md:hidden" style={{ fontFamily: 'var(--font-family-headline)' }}>{browserName}</h1>
+        <h1 className="text-5xl font-bold text-primary sm:text-6xl md:hidden font-headline" style={{ fontFamily: 'var(--font-family-headline)' }}>{browserName}</h1>
         <div className="w-full max-w-2xl">
           <p className="mb-4 text-lg text-foreground/90">
             {t('searchPrompt')}
           </p>
           <SearchForm />
+          <div className="mt-4 flex flex-col items-center gap-3">
+            {!isAddingShortcut && (
+              <Button variant="secondary" onClick={() => setIsAddingShortcut(true)}>{t('addShortcut')}</Button>
+            )}
+            {isAddingShortcut && (
+              <div className="w-full flex flex-col items-center gap-2 sm:flex-row sm:gap-3">
+                <input
+                  type="text"
+                  inputMode="url"
+                  className="w-full rounded-md border bg-background px-3 py-2 outline-none focus:ring-2 focus:ring-primary"
+                  placeholder={t('enterSiteUrl')}
+                  value={shortcutInput}
+                  onChange={(e) => setShortcutInput(e.target.value)}
+                />
+                <div className="flex gap-2">
+                  <Button onClick={handleAddShortcut}>{t('ok')}</Button>
+                  <Button variant="ghost" onClick={() => { setIsAddingShortcut(false); setShortcutInput(''); }}>{t('cancel')}</Button>
+                </div>
+              </div>
+            )}
+            {shortcuts.length > 0 && (
+              <div className="mt-2 flex flex-wrap justify-center gap-2">
+                {shortcuts.map(s => {
+                  let label = s.url;
+                  let favicons: string[] = [];
+                  try {
+                    const u = new URL(s.url);
+                    label = u.hostname.replace(/^www\./, '');
+                    favicons = getFaviconCandidates(s.url);
+                  } catch {}
+                  return (
+                    <div key={s.url} className="flex items-center">
+                      <Link href={s.url} target="_blank" rel="noopener noreferrer" className="px-3 py-2 rounded-md border bg-card/60 hover:bg-card transition-colors flex items-center gap-2">
+                        {favicons.length > 0 && (
+                          // eslint-disable-next-line @next/next/no-img-element
+                          <img
+                            src={favicons[0]}
+                            alt=""
+                            width={18}
+                            height={18}
+                            loading="lazy"
+                            referrerPolicy="no-referrer"
+                            onError={(e) => {
+                              const el = e.currentTarget as HTMLImageElement;
+                              if (favicons[1] && el.src !== favicons[1]) {
+                                el.src = favicons[1];
+                              } else {
+                                el.style.display = 'none';
+                              }
+                            }}
+                            style={{ borderRadius: 4 }}
+                          />
+                        )}
+                        <span>{label}</span>
+                      </Link>
+                      <button aria-label="remove" className="ml-1 text-foreground/50 hover:text-destructive transition-colors" onClick={() => handleRemoveShortcut(s.url)}>
+                        ×
+                      </button>
+                    </div>
+                  );
+                })}
+              </div>
+            )}
+          </div>
         </div>
       </main>
 

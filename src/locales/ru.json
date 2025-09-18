@@ -21,4 +21,13 @@
   "saveChanges": "Сохранить изменения",
   "settingsSavedTitle": "Настройки сохранены",
   "settingsSavedDesc": "Ваши предпочтения были обновлены."
+  ,
+  "addShortcut": "Добавить ярлык",
+  "enterSiteUrl": "Введите URL сайта (http(s):// или домен)",
+  "ok": "ОК",
+  "cancel": "Отмена",
+  "invalidUrlTitle": "Некорректный URL",
+  "invalidUrlDesc": "Введите корректный http(s) URL или домен.",
+  "shortcutAddedTitle": "Ярлык добавлен",
+  "shortcutAddedDesc": "Ваш ярлык сохранён в cookie."
 }

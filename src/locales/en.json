@@ -20,5 +20,13 @@
   "selectFont": "Select a font",
   "saveChanges": "Save Changes",
   "settingsSavedTitle": "Settings Saved",
-  "settingsSavedDesc": "Your preferences have been updated."
+  "settingsSavedDesc": "Your preferences have been updated.",
+  "addShortcut": "Add Shortcut",
+  "enterSiteUrl": "Enter site URL (http(s):// or domain)",
+  "ok": "OK",
+  "cancel": "Cancel",
+  "invalidUrlTitle": "Invalid URL",
+  "invalidUrlDesc": "Please enter a valid http(s) URL or domain.",
+  "shortcutAddedTitle": "Shortcut added",
+  "shortcutAddedDesc": "Your shortcut is saved in cookies."
 }
