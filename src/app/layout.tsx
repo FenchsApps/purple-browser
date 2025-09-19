@@ -41,6 +41,10 @@ export default function RootLayout({
                     document.documentElement.style.backgroundColor = bgColor;
                     if (document.body) document.body.style.backgroundColor = bgColor;
                   }
+                } else if (bgType === 'dynamic') {
+                  // Dynamic mode: clear any solid background, let CSS handle it
+                  document.documentElement.style.backgroundColor = '';
+                  if (document.body) document.body.style.backgroundColor = '';
                 }
               } catch(e){}
             })();

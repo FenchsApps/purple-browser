@@ -11,7 +11,7 @@ import { Button } from '@/components/ui/button';
 import { fonts, fontLinks } from '@/lib/fonts';
 import { useToast } from "@/hooks/use-toast"
 import { useLanguage } from '@/hooks/use-language';
-import { getColorName } from '@/lib/color-names';
+// import { getColorName } from '@/lib/color-names'; // Removed dynamic naming
 
 type UserShortcut = {
   url: string;
@@ -29,7 +29,7 @@ export default function Home() {
   const [settings, setSettings] = useState<Settings | null>(null);
   const [year, setYear] = useState(new Date().getFullYear());
   const [isFooterVisible, setIsFooterVisible] = useState(true);
-  const [browserName, setBrowserName] = useState('Purple Browser');
+  const [browserName] = useState('Purple Browser');
   const [shortcuts, setShortcuts] = useState<UserShortcut[]>([]);
   const [isAddingShortcut, setIsAddingShortcut] = useState(false);
   const [shortcutInput, setShortcutInput] = useState('');
@@ -85,11 +85,9 @@ export default function Home() {
 
     if (settings.backgroundType === 'solid') {
       document.body.style.backgroundColor = settings.backgroundColor;
-      setBrowserName(`${getColorName(settings.backgroundColor)} Browser`);
     } else {
       // Dynamic mode: use CSS background
       document.body.style.backgroundColor = '';
-      setBrowserName(`${getColorName(settings.lineColor)} Browser`);
     }
 
   }, [settings]);
