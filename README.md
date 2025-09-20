@@ -54,4 +54,4 @@ npm run build && npm run start
 
 ## License
 
-GPL-3.0
+GPL-3.0 Only
